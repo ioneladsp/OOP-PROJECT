@@ -4,4 +4,5 @@ using namespace std;
 int main() {
 	cout << "ceva";
 	cout << "buna";
+	cout << "oare mai merge?";
 }
