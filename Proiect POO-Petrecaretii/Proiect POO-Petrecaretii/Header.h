@@ -527,6 +527,7 @@ public:
 	friend istream& operator>>(istream&, date&);
 	friend class baza_de_date;
 	friend class tabela;
+	friend class gestionare_fisiere_binare;
 };
 
 ostream& operator<<(ostream& out, date c)
@@ -636,6 +637,13 @@ public:
 		//SELECT NUME, SALARIU FROM ANGAJATI WHERE SALARIU = 700
 		//UPDATE ANGAJATI SET SALARIU = 1000 WHERE NUME = ION
 		//DELETE FROM ANGAJATI WHERE NUME = MARIA
+		//CREATE TABLE ANIMALE((SPECIE,VARCHAR2,30,NECUNOSCUTA),(PRET,NUMBER,30,0))
+		//INSERT INTO ANIMALE VALUES(RATON,300)
+		//INSERT INTO ANIMALE VALUES(MAMUT,1000)
+		//INSERT INTO ANIMALE VALUES(ZEBRA,500)
+		//INSERT INTO ANIMALE VALUES(CERB,300)
+		//SELECT ALL FROM ANIMALE WHERE SPECIE = MAMUT
+		//UPDATE ANIMALE SET SPECIE
 		int j;
 		int lungime_coloana;
 		int lungime_nume;
@@ -696,13 +704,14 @@ public:
 
 	void afiseaza_date(int numar_coloane)
 	{
-		cout << " numar_coloane: " << numar_coloane << endl;
-		cout << " nume_tabela: " << nume_tabela << endl;
+		//cout << " numar_coloane: " << numar_coloane << endl;
+		//cout << " nume_tabela: " << nume_tabela << endl;
+		//cout << " numar date: " << numar_date << endl;
 		int numar_spatii;
 		int numar_liniute;
 		int l = 1;
 		numar_liniute = (20 * numar_coloane - strlen(nume_tabela)) / 2;
-		cout << " numar_liniute: " << numar_liniute << endl;
+		//cout << " numar_liniute: " << numar_liniute << endl;
 		cout << " ";
 		for (int i = 0; i < numar_liniute; i++)
 			cout << "-";
@@ -738,6 +747,7 @@ public:
 		{
 			cout << "--------------------";
 		}
+		//cout << " numar date again: " << numar_date << endl;
 	}
 
 	tabela operator++()
@@ -791,6 +801,7 @@ public:
 	friend istream& operator>>(istream&, tabela&);
 	friend class gestionare_fisiere;
 	friend class baza_de_date;
+	friend class gestionare_fisiere_binare;
 };
 int numar_tabele = 1;
 
@@ -816,6 +827,8 @@ istream& operator>>(istream& in, tabela& c)
 	return in;
 }
 
+tabela* t = new tabela[10];
+
 class gestionare_fisiere
 {
 	fstream f;
@@ -829,7 +842,7 @@ class gestionare_fisiere
 	{
 		this->nr_select = val;
 	}
-	void display(tabela t)
+	void display(int q)
 	{
 		char nume_fisier[12] = "";
 		char display[9] = "DISPLAY_";
@@ -842,45 +855,45 @@ class gestionare_fisiere
 		int lungime_coloana;
 		int lungime_nume;
 		f << " ";
-		lungime_nume = (54 - strlen(t.get_nume_tabela())) / 2;
+		lungime_nume = (54 - strlen(t[q].get_nume_tabela())) / 2;
 		for (int i = 0; i < lungime_nume; i++)
 		{
 			f << "-";
 		}
 		f << " ";
-		f << t.get_nume_tabela();
+		f << t[q].get_nume_tabela();
 		f << " ";
 		for (int i = 0; i < lungime_nume; i++)
 		{
 			f << "-";
 		}
 		f << endl;
-		for (int i = 0; i < t.get_numar_coloane(); i++)
+		for (int i = 0; i < t[q].get_numar_coloane(); i++)
 		{
-			f << " | " << t.coloane[i].get_nume_coloana();
-			lungime_coloana = 13 - strlen(t.coloane[i].get_nume_coloana());
+			f << " | " << t[q].coloane[i].get_nume_coloana();
+			lungime_coloana = 13 - strlen(t[q].coloane[i].get_nume_coloana());
 			for (j = 0; j < lungime_coloana; j++)
 				f << " ";
 			f << "|   ";
-			f << t.coloane[i].get_tip_coloana();
-			lungime_coloana = 11 - strlen(t.coloane[i].get_tip_coloana());
+			f << t[q].coloane[i].get_tip_coloana();
+			lungime_coloana = 11 - strlen(t[q].coloane[i].get_tip_coloana());
 			for (j = 0; j < lungime_coloana; j++)
 				f << " ";
 			f << "|  ";
-			f << t.coloane[i].get_dim_tip_coloana();
-			lungime_coloana = 5 - strlen(t.coloane[i].get_dim_tip_coloana());
+			f << t[q].coloane[i].get_dim_tip_coloana();
+			lungime_coloana = 5 - strlen(t[q].coloane[i].get_dim_tip_coloana());
 			for (j = 0; j < lungime_coloana; j++)
 				f << " ";
 			f << "|  ";
-			f << t.coloane[i].get_valoare_implicita();
-			lungime_coloana = 14 - strlen(t.coloane[i].get_valoare_implicita());
+			f << t[q].coloane[i].get_valoare_implicita();
+			lungime_coloana = 14 - strlen(t[q].coloane[i].get_valoare_implicita());
 			for (j = 0; j < lungime_coloana; j++)
 				f << " ";
 			f << "|" << endl;
 		}
 		f << " ";
 		int lungime_bara_jos;
-		if (strlen(t.nume_tabela) % 2 == 1)
+		if (strlen(t[q].nume_tabela) % 2 == 1)
 		{
 			lungime_bara_jos = 55;
 		}
@@ -893,7 +906,7 @@ class gestionare_fisiere
 		f << endl;
 		f.close();
 	}
-	void select_all(tabela t)
+	void select_all(int q)
 	{
 		char nume_fisier[12] = "";
 		char display[9] = "SELECT_";
@@ -905,30 +918,32 @@ class gestionare_fisiere
 		int numar_spatii;
 		int numar_liniute;
 		int l = 1;
-		numar_liniute = (20 * t.numar_coloane - strlen(t.nume_tabela)) / 2;
+		numar_liniute = (20 * t[q].numar_coloane - strlen(t[q].nume_tabela)) / 2;
+		//cout << " numar coloane: " << t[q].numar_coloane << endl;
+		//cout << " numar linii: " << t[q].numar_date << endl;
 		f << " ";
 		for (int i = 0; i < numar_liniute; i++)
 			f << "-";
-		f << t.nume_tabela;
+		f << t[q].nume_tabela;
 		for (int i = 0; i < numar_liniute; i++)
 			f << "-";
 		f << endl;
-		for (int i = 0; i <= t.numar_date; i++)
+		for (int i = 0; i < t[q].numar_date; i++)
 		{
-			for (int j = 1; j <= t.numar_coloane; j++)
+			for (int j = 1; j <= t[q].numar_coloane; j++)
 			{
 				if (i == 1 && j == 1)
 				{
 					f << " ";
-					while (l <= t.numar_coloane)
+					while (l <= t[q].numar_coloane)
 					{
 						f << "--------------------"; //20
 						l++;
 					}
 					f << endl;
 				}
-				f << " |  " << t.d[i][j].get_date_introduse();
-				numar_spatii = 16 - strlen(t.d[i][j].get_date_introduse());
+				f << " |  " << t[q].d[i][j].get_date_introduse();
+				numar_spatii = 16 - strlen(t[q].d[i][j].get_date_introduse());
 				for (int k = 0; k < numar_spatii; k++)
 				{
 					f << " ";
@@ -937,11 +952,10 @@ class gestionare_fisiere
 			f << "|" << endl;
 		}
 		f << " ";
-		for (int i = 1; i <= t.numar_coloane; i++)
+		for (int i = 1; i <= t[q].numar_coloane; i++)
 		{
 			f << "--------------------";
 		}
-		f.close();
 	}
 	void select(string** mat, int nr_linii, int nr_coloane)
 	{
@@ -972,7 +986,7 @@ class gestionare_fisiere_binare
 {
 	FILE* f;
 	fstream g;
-	void create_binar(char* nume_fisier, string* vector, int dim)
+	void create_binar(char* nume_fisier, string* vector, int dim, int numar_coloane)
 	{
 		char* copie_nume_fisier = new char[strlen(nume_fisier) + 1];
 		strcpy(copie_nume_fisier, nume_fisier);
@@ -984,13 +998,16 @@ class gestionare_fisiere_binare
 		}
 		fclose(f);
 		fstream g(copie_nume_fisier, ios::out);
-		for (int i = 0; i < dim; i++)
+		for (int i = 0; i < dim; i = i + 4)
 		{
 			g << vector[i] << " ";
+			g << vector[i + 1] << " ";
+			g << vector[i + 2] << " ";
+			g << vector[i + 3];
+			g << endl;
 		}
 		g.close();
 	}
-	//void insert_binar(char nume_fisier[10], int dim, string* vector, date m[10][10], int nr_linii)
 	void insert_binar(char nume_fisier[10], int dim, string* vector)
 	{
 		char* copie_nume_fisier = new char[strlen(nume_fisier) + 1];
@@ -1008,18 +1025,25 @@ class gestionare_fisiere_binare
 		{
 			g << vector[j] << " ";
 		}
-		/*for (int i = 0; i < nr_linii; i++)
-		{
-			for (int j = 1; j <= dim; j++)
-			{
-				g << m[i][j] << " ";
-			}
-			g << endl;
-		}*/
 		g.close();
 	}
-	void update_binar(char nume_fisier[10], int nr_linii, int nr_coloane, string** matrice)
+	void update_binar(char nume_fisier[10], int nr_linii, int nr_coloane, string** matrice, int k)
 	{
+		fstream fisier(nume_fisier, ios::out | ios::trunc);
+		for (int l = 0; l < t[k].get_numar_coloane(); l++)
+		{
+			fisier << t[k].coloane[l].get_nume_coloana() << " ";
+			fisier << t[k].coloane[l].get_tip_coloana() << " ";
+			fisier << t[k].coloane[l].get_dim_tip_coloana() << " ";
+			fisier << t[k].coloane[l].get_valoare_implicita() << endl;
+		}
+		for (int i = 1; i < nr_linii; i++)
+		{
+			for (int j = 0; j < nr_coloane; j++)
+			{
+				fisier << matrice[i][j] << " ";
+			}
+		}
 		strcat(nume_fisier, ".bin");
 		f = fopen(nume_fisier, "wb+");
 		fseek(f, 0, SEEK_END);
@@ -1034,13 +1058,29 @@ class gestionare_fisiere_binare
 	}
 	void drop_binar(char* nume_fisier)
 	{
+		remove(nume_fisier);
 		strcat(nume_fisier, ".bin");
 		remove(nume_fisier);
 	}
-	void delete_binar(char nume_fisier[10], int nr_linii, int nr_coloane, string** matrice)
+	void delete_binar(char nume_fisier[10], int nr_linii, int nr_coloane, string** matrice, int k)
 	{
-		cout << " nr linii:" << nr_linii << endl;
-		cout << " nr_coloane:" << nr_coloane << endl;
+		//cout << " nr linii:" << nr_linii << endl;
+		//cout << " nr_coloane:" << nr_coloane << endl;
+		fstream fisier(nume_fisier, ios::out | ios::trunc);
+		for (int l = 0; l < t[k].get_numar_coloane(); l++)
+		{
+			fisier << t[k].coloane[l].get_nume_coloana() << " ";
+			fisier << t[k].coloane[l].get_tip_coloana() << " ";
+			fisier << t[k].coloane[l].get_dim_tip_coloana() << " ";
+			fisier << t[k].coloane[l].get_valoare_implicita() << endl;
+		}
+		for (int i = 1; i < nr_linii; i++)
+		{
+			for (int j = 0; j < nr_coloane; j++)
+			{
+				fisier << matrice[i][j] << " ";
+			}
+		}
 		strcat(nume_fisier, ".bin");
 		f = fopen(nume_fisier, "wb+");
 		for (int i = 0; i < nr_linii; i++)
@@ -1063,69 +1103,69 @@ class baza_de_date
 	int dim = 0;
 	int* nr_linii;
 	int* nr_coloane;
-	tabela* tb;
 public:
 
-	void initializare(tabela* tb)
+	void initializare()
 	{
-		tb = new tabela[10];
-		cout << " A intrat in initializare!" << endl;
+		//cout << " A intrat in initializare!" << endl;
 		v = new string[10];
 		nr_linii = new int[10];
 		nr_coloane = new int[10];
 		char* nume_tabela;
-		fstream fisier_date("Stocare_date.txt", ios::in | ios::out);
+		fstream fisier_date("Stocare_date", ios::in | ios::out);
 		fisier_date >> nr_display;
-		cout << " nr_display: " << nr_display << endl;
+		//cout << " nr_display: " << nr_display << endl;
 		fisier_date >> nr_select;
-		cout << " nr_select: " << nr_select << endl;
+		//cout << " nr_select: " << nr_select << endl;
 		int i = 0;
 		while (!fisier_date.eof())
 		{
-			cout << " A intrat in while!" << endl;
+			//cout << " A intrat in while!" << endl;
 			fisier_date >> v[i];
-			cout << " v[i]: " << v[i] << endl;
-			tb[i + 1].set_nume_tabela(v[i].c_str());
+			//cout << " v[i]: " << v[i] << endl;
+			t[i + 1].set_nume_tabela(v[i].c_str());
 			fisier_date >> nr_linii[i];
-			cout << " nr_linii[i]: " << nr_linii[i] << endl;
-			tb[i + 1].set_numar_date(nr_linii[i]);
+			//cout << " nr_linii[i]: " << nr_linii[i] << endl;
+			t[i + 1].set_numar_date(nr_linii[i]);
 			fisier_date >> nr_coloane[i];
-			cout << " nr_coloane[i]: " << nr_coloane[i] << endl;
-			tb[i + 1].set_numar_coloane(nr_coloane[i]);
+			//cout << " nr_coloane[i]: " << nr_coloane[i] << endl;
+			t[i + 1].set_numar_coloane(nr_coloane[i]);
 			char* s = new char[4];
 			nume_tabela = new char[v[i].length() + 1];
 			strcpy(nume_tabela, v[i].c_str());
-			cout << " nume_tabela: " << nume_tabela;
+			//cout << " nume_tabela: " << nume_tabela;
 			fstream f;
 			f.open(nume_tabela, ios::in);
+			for (int l = 0; l < nr_coloane[i]; l++)
+			{
+				f >> s;
+				t[i + 1].coloane[l].set_nume_coloana(s);
+				t[i + 1].d[0][l + 1].set_date_introduse(s);
+				f >> s;
+				t[i + 1].coloane[l].set_tip_coloana(s);
+				f >> s;
+				t[i + 1].coloane[l].set_dim_tip_coloana(s);
+				f >> s;
+				t[i + 1].coloane[l].set_valoare_implicita(s);
+			}
 			for (int j = 0; j < nr_linii[i]; j++)
 			{
-				cout << " for2:" << endl;
+				//cout << " for2:" << endl;
 				for (int k = 1; k <= nr_coloane[i]; k++)
 				{
-					cout << " for3: " << endl;
+					//cout << " for3: " << endl;
 					f >> s;
-					cout << " s: " << s << endl;
-					tb[i + 1].d[j][k].set_date_introduse(s);
-					cout << " t[i].d[j][k].get_date_introduse(): " << tb[i + 1].d[j][k].get_date_introduse();
+					//cout << " s: " << s <<endl;
+					t[i + 1].d[j + 1][k].set_date_introduse(s);
+					cout << " t[" << i << "].d[" << j + 1 << "][" << k << "].get_date_introduse(): " << t[i + 1].d[j + 1][k].get_date_introduse() << endl;
 				}
 			}
 			i++;
 			numar_tabele++;
 		}
-		cout << " i: " << i << endl;
+		//cout << " i: " << i << endl;
 		dim = i;
-		cout << " dim: " << dim << endl;
-	}
-
-	void set_tabela(tabela* tb)
-	{
-		this->tb = tb;
-	}
-
-	tabela* get_tabela()
-	{
-		return tb;
+		//cout << " dim: " << dim << endl;
 	}
 
 	int get_dim()
@@ -1149,29 +1189,36 @@ public:
 class identificator_comanda
 {
 	vector<string> nume_tabele;
-	//tabela t[10];
 	int aux;
+	tabela* copie_tabele = nullptr;
+	int dimensiune = 0;
 public:
 
 	identificator_comanda()
 	{
 	}
 
-	identificator_comanda(int aux)
+	identificator_comanda(int aux, int dimensiune)
 	{
 		this->aux = aux;
+		this->dimensiune = dimensiune;
 	}
 
-	/*identificator_comanda(int aux, tabela t[10])
+	identificator_comanda(int aux, int dimensiune, tabela* copie_tabela)
 	{
 		this->aux = aux;
-		for (int i = 0; i < 10; i++)
+		if (dimensiune > 0)
 		{
-			this->t[10] = t[10];
+			this->dimensiune = dimensiune;
+			this->copie_tabele = new tabela[dimensiune];
+			for (int i = 0; i < dimensiune; i++)
+			{
+				this->copie_tabele[i] = copie_tabele[i];
+			}
 		}
-	}*/
+	}
 
-	void identifica_comanda(char s[], tabela* t)
+	void identifica_comanda(char s[])
 	{
 		char separator[5] = " ,()";
 		char comanda[20];
@@ -1233,14 +1280,17 @@ public:
 							t[numar_tabele].d[0][numar_coloane + 1].set_date_introduse(verifica);
 							verifica = strtok(NULL, separator);
 							t[numar_tabele].coloane[numar_coloane].set_tip_coloana(verifica);
+							vector_create[k++] = verifica;
 							verifica = strtok(NULL, separator);
 							t[numar_tabele].coloane[numar_coloane].set_dim_tip_coloana(verifica);
+							vector_create[k++] = verifica;
 							verifica = strtok(NULL, separator);
 							t[numar_tabele].coloane[numar_coloane].set_valoare_implicita(verifica);
+							vector_create[k++] = verifica;
 							numar_coloane++;
 							verifica = strtok(NULL, separator);
 						}
-						F.create_binar(nume_t, vector_create, k);
+						F.create_binar(nume_t, vector_create, k, numar_coloane);
 						cout << " Tabela a fost creata." << endl;
 						cout << endl;
 						system("pause");
@@ -1264,11 +1314,6 @@ public:
 				int ok = 0;
 				if (verifica)
 				{
-					/*for (int h = 0; h < B.get_dim(); h++)
-						{
-							if (B.v[h] == verifica)
-								ok = 1;
-						}*/
 					vector<string>::iterator it = find(nume_tabele.begin(), nume_tabele.end(), verifica);
 					if (it != nume_tabele.end() || ok == 1) //daca se gaseste deja in vector
 					{
@@ -1279,7 +1324,7 @@ public:
 								t[i].afisare_tabela(t[i].numar_coloane);
 								nr_display++;
 								G.set_nr_display(nr_display);
-								G.display(t[i]);
+								G.display(i);
 							}
 						}
 					}
@@ -1408,13 +1453,13 @@ public:
 										if (i <= t[aux + 1].numar_coloane)
 										{
 											cout << " ";
-											int lungime_nume = (54 - copie_nume_tabela.length()) / 2;
-											for (int i = 0; i < lungime_nume; i++)
+											int lungime_nume = (17 * t[aux + 1].numar_coloane - copie_nume_tabela.length()) / 2;
+											for (int H = 0; H < lungime_nume; H++)
 											{
 												cout << "-";
 											}
-											cout << copie_nume_tabela;
-											for (int i = 0; i < lungime_nume; i++)
+											cout << " " << copie_nume_tabela << " ";
+											for (int H = 0; H < lungime_nume; H++)
 											{
 												cout << "-";
 											}
@@ -1426,7 +1471,7 @@ public:
 												if (verifica)
 												{
 													int g;
-													for (g = 0; g < t[aux + 1].numar_date + 1; g++) //parcurgere pe linii
+													for (g = 0; g < t[aux + 1].numar_date; g++) //parcurgere pe linii
 													{
 														int numar_spatii;
 														if (strcmp(t[aux + 1].d[g][i].get_date_introduse(), verifica) == 0 || strcmp(t[aux + 1].d[g][i].get_date_introduse(), nume_coloana_conditie) == 0)
@@ -1468,11 +1513,6 @@ public:
 																X++;
 																cout << "|" << endl;
 																cout << " ";
-																for (int Q = 1; Q <= t[aux + 1].numar_coloane; Q++)
-																{
-																	cout << "------------------";
-																}
-																cout << endl;
 															}
 															else
 															{
@@ -1492,6 +1532,12 @@ public:
 															}
 														}
 													}
+													cout << " ";
+													for (int Q = 1; Q <= t[aux + 1].numar_coloane; Q++)
+													{
+														cout << "------------------";
+													}
+													cout << endl;
 													if (date_afisate == 1)
 													{
 
@@ -1525,33 +1571,17 @@ public:
 							}
 							else
 							{
-								//int i = 1;
-								cout << " numar_tabele: " << numar_tabele << endl;
-								cout << " copie_nume_tabela: " << copie_nume_tabela << endl;
-								for (int i = 0; i < nume_tabele.size(); i++)
+								int i = 1;
+								while (i <= numar_tabele && t[i].nume_tabela != copie_nume_tabela)
 								{
-									cout << " for copie" << endl;
-									if (nume_tabele[i] == copie_nume_tabela)
-									{
-										cout << " tabela " << i << ":" << endl;
-										t[i + 1].afiseaza_date(t[i + 1].numar_coloane);
-										cout << endl;
-										nr_select++;
-										G.set_nr_select(nr_select);
-										G.select_all(t[i]);
-									}
-								}
-								/*while (i <= numar_tabele && t[i].nume_tabela != copie_nume_tabela)
-								{
-									cout << " t[i].nume_tabela: " << t[i].nume_tabela << endl;
 									i++;
 								}
-								cout << " tabela " << i << ":" << endl;
 								t[i].afiseaza_date(t[i].numar_coloane);
 								cout << endl;
 								nr_select++;
 								G.set_nr_select(nr_select);
-								G.select_all(t[i]);*/
+								G.select_all(i);
+								cout << endl;
 								system("pause");
 								system("cls");
 							}
@@ -1641,7 +1671,7 @@ public:
 													}
 													char* nume_temporar = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
 													strcpy(nume_temporar, t[aux + 1].get_nume_tabela());
-													F.delete_binar(nume_temporar, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_delete);
+													F.delete_binar(nume_temporar, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_delete, aux + 1);
 													if (inregistrari_sterse == 1)
 													{
 														cout << " A fost stearsa o inregistrare." << endl;
@@ -1708,12 +1738,25 @@ public:
 					vector<string>::iterator it = find(nume_tabele.begin(), nume_tabele.end(), verifica);
 					if (it != nume_tabele.end()) //daca se gaseste in vector
 					{
+						cout << " ";
+						int lungime_nume = (18 * coloana.size() - strlen(verifica)) / 2;
+						for (int H = 0; H < lungime_nume; H++)
+						{
+							cout << "-";
+						}
+						cout << " " << verifica << " ";
+						for (int H = 0; H < lungime_nume; H++)
+						{
+							cout << "-";
+						}
+						cout << endl;
 						aux = distance(nume_tabele.begin(), it);
 						verifica = strtok(NULL, separator); //poate am ajuns la where
 						if (verifica)
 						{
 							if (strcmp(uppercase(verifica), "WHERE") == 0)
 							{
+								//SELECT NUME, SALARIU FROM ANGAJATI WHERE NUME = NICU
 								verifica = strtok(NULL, separator); //luam numele coloanei pentru conditie
 								char nume_coloana_conditie[100];
 								strcpy(nume_coloana_conditie, verifica);
@@ -1730,7 +1773,7 @@ public:
 												if (verifica)
 												{
 													X = 0;
-													for (int g = 0; g < t[aux + 1].numar_date + 1; g++) //parcurgere pe linii
+													for (int g = 0; g <= t[aux + 1].numar_date; g++) //parcurgere pe linii
 													{
 														Y = 0;
 														if (strcmp(t[aux + 1].d[g][i].get_date_introduse(), verifica) == 0 || strcmp(t[aux + 1].d[g][i].get_date_introduse(), nume_coloana_conditie) == 0)
@@ -1740,15 +1783,34 @@ public:
 																for (int k = 0; k < coloana.size(); k++)
 																	if (coloana[k] == t[aux + 1].d[0][j].get_date_introduse())
 																	{
-																		cout << t[aux + 1].d[g][j].get_date_introduse() << " ";
+																		cout << " |  " << t[aux + 1].d[g][j].get_date_introduse();
 																		matrice1[X][Y++] = t[aux + 1].d[g][j].get_date_introduse();
+																		int numar_spatii = 15 - strlen(t[aux + 1].d[g][j].get_date_introduse());
+																		for (int P = 0; P < numar_spatii; P++)
+																		{
+																			cout << " ";
+																		}
 																	}
 															}
-															cout << endl;
+															cout << "|" << endl;
+															if (g == 0)
+															{
+																cout << " ";
+																for (int E = 0; E < coloana.size(); E++)
+																{
+																	cout << "-------------------";
+																}
+																cout << endl;
+															}
 															X++;
 														}
 													}
-													cout << endl;
+													cout << " ";
+													for (int E = 0; E < coloana.size(); E++)
+													{
+														cout << "-------------------";
+													}
+													cout << endl << endl;
 													system("pause");
 													system("cls");
 													nr_select++;
@@ -1768,19 +1830,40 @@ public:
 							for (int l = 0; l < t[aux + 1].numar_date + 1; l++)
 							{
 								Y = 0;
-								for (int j = 0; j < t[aux + 1].numar_date; j++)
+								for (int j = 0; j < t[aux + 1].numar_coloane; j++)
 								{
 									for (int k = 0; k < coloana.size(); k++)
+									{
 										if (coloana[k] == t[aux + 1].d[0][j + 1].get_date_introduse())
 										{
-											cout << t[aux + 1].d[l][j + 1].get_date_introduse() << " ";
+											cout << " |  " << t[aux + 1].d[l][j + 1].get_date_introduse() << " ";
 											matrice1[X][Y++] = t[aux + 1].d[l][j + 1].get_date_introduse();
+											int numar_spatii = 14 - strlen(t[aux + 1].d[l][j + 1].get_date_introduse());
+											for (int P = 0; P < numar_spatii; P++)
+											{
+												cout << " ";
+											}
 										}
+									}
 								}
-								cout << endl;
+								cout << "|" << endl;
+								if (l == 0)
+								{
+									cout << " ";
+									for (int E = 0; E < coloana.size(); E++)
+									{
+										cout << "-------------------";
+									}
+									cout << endl;
+								}
 								X++;
 							}
-							cout << endl;
+							cout << " ";
+							for (int E = 0; E < coloana.size(); E++)
+							{
+								cout << "-------------------";
+							}
+							cout << endl << endl;
 							system("pause");
 							system("cls");
 							nr_select++;
@@ -1878,8 +1961,10 @@ public:
 																								matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
 																							}
 																						}
-																						F.update_binar(t[aux + 1].get_nume_tabela(), t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update);
-																						cout << " A fost modificata o inregistrare." << endl;
+																						char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
+																						strcpy(nume_t, t[aux + 1].get_nume_tabela());
+																						F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
+																						cout << " A fost modificata o inregistrare." << endl << endl;
 																						system("pause");
 																						system("cls");
 																					}
@@ -1892,7 +1977,9 @@ public:
 																								matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
 																							}
 																						}
-																						F.update_binar(t[aux + 1].get_nume_tabela(), t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update);
+																						char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
+																						strcpy(nume_t, t[aux + 1].get_nume_tabela());
+																						F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
 																						cout << " Au fost modificate " << nr << " inregistrari." << endl;
 																						system("pause");
 																						system("cls");
@@ -2021,14 +2108,14 @@ public:
 		}
 	}
 
-	/*tabela& operator[](int index)
+	tabela& operator[](int index)
 	{
 		if (index >= 0 && index < this->aux)
 		{
 			return t[index];
 		}
 		throw exception("index invalid");
-	}*/
+	}
 
 	bool  operator==(const identificator_comanda& t2)
 	{
@@ -2055,20 +2142,12 @@ ostream& operator<<(ostream& out, identificator_comanda ic)
 	}
 	out << endl;
 	out << ic.aux;
-	/*for (int i = 0; i < numar_tabele; i++)
-	{
-		out << ic.t[i] << endl;
-	}*/
 	return out;
 }
 
 istream& operator>>(istream& in, identificator_comanda& ic)
 {
 	in >> ic.aux;
-	/*for (int i = 0; i < numar_tabele; i++)
-	{
-		in >> ic.t[i];
-	}*/
 	return in;
 }
 
@@ -2079,7 +2158,6 @@ class meniu
 	int static numar_comanda;
 	identificator_comanda a;
 	baza_de_date b;
-	tabela* t = new tabela[10];
 public:
 	meniu()
 	{
@@ -2089,16 +2167,15 @@ public:
 
 	void verifica()
 	{
-		b.initializare(t);
+		b.initializare();
 		if (b.get_dim() > 0)
 		{
 			for (int i = 0; i < b.get_dim(); i++)
 			{
-				cout << " for push back " << endl;
+				//cout << " for push back " << endl;
 				a.nume_tabele.push_back(b.v[i]);
 			}
 		}
-		cout << " meniu/nume_tabela: " << t[1].get_nume_tabela() << endl;;
 		cout << endl;
 		cout << " Doriti sa introduceti o comanda? 1 sau 0" << endl;
 		cout << " Raspuns: ";
@@ -2112,7 +2189,7 @@ public:
 				cin.get();
 				cin.getline(s, 200);
 				cout << endl;
-				a.identifica_comanda(s, t);
+				a.identifica_comanda(s);
 				cout << endl;
 				cout << " Doriti sa introduceti o comanda noua?" << endl;
 				cout << " Raspuns: ";
@@ -2123,22 +2200,29 @@ public:
 					cout << " Introduceti comanda:" << endl << endl << " ";
 			}
 		}
-		fstream fisier_inceput("Stocare_date.txt", ios::in | ios::out | ios::trunc);
-		fisier_inceput << nr_display << " ";
-		cout << " nr_display: " << nr_display << endl;
-		fisier_inceput << nr_select << " ";
-		cout << " nr_select: " << nr_select << endl;
-		fisier_inceput << endl;
-		for (int i = 1; i <= a.nume_tabele.size(); i++)
+		if (b.get_dim() > 0 || numar_tabele > 1)
 		{
-			cout << " for1" << endl;
-			cout << " nume_tabela:" << t[i].get_nume_tabela() << endl;
-			fisier_inceput << t[i].get_nume_tabela() << " ";
-			fisier_inceput << t[i].get_numar_date() + 1 << " ";
-			fisier_inceput << t[i].get_numar_coloane();
+			fstream fisier_inceput("Stocare_date", ios::out);
+			fisier_inceput << nr_display << " ";
+			//cout << " nr_display: " << nr_display << endl;
+			fisier_inceput << nr_select << " ";
+			//cout << " nr_select: " << nr_select << endl;
+			fisier_inceput << endl;
+			for (int i = 1; i < a.nume_tabele.size(); i++)
+			{
+				/*cout << " i: " << i << endl;
+				cout << " for1" << endl;
+				cout << " nume_tabela:" << t[i].get_nume_tabela() << endl;*/
+				fisier_inceput << t[i].get_nume_tabela() << " ";
+				fisier_inceput << t[i].get_numar_date() << " ";
+				fisier_inceput << t[i].get_numar_coloane() << endl;
+			}
+			fisier_inceput << t[a.nume_tabele.size()].get_nume_tabela() << " ";
+			fisier_inceput << t[a.nume_tabele.size()].get_numar_date() << " ";
+			fisier_inceput << t[a.nume_tabele.size()].get_numar_coloane();
+			fisier_inceput.close();
+			fisier_inceput.clear();
 		}
-		fisier_inceput.close();
-		fisier_inceput.clear();
 	}
 
 	bool operator!()
