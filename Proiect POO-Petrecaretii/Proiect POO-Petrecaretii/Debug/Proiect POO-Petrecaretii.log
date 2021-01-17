@@ -1,12 +1,12 @@
 ﻿  Source.cpp
 C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(1582,25): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(1649,32): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2168,35): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2178,32): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2222,28): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2231,26): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2284,31): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(1652,32): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2176,35): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2186,32): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2230,28): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2239,26): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2292,31): warning C4018: '<': signed/unsigned mismatch
 C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(1342,8): warning C4101: 'nume_tabela': unreferenced local variable
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2592,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2730,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2600,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Proiect POO-Petrecaretii\Header.h(2738,22): warning C4018: '<': signed/unsigned mismatch
   Proiect POO-Petrecaretii.vcxproj -> C:\Users\Alex\Documents\GitHub\PROIECT-POO\Proiect POO-Petrecaretii\Debug\Proiect POO-Petrecaretii.exe
