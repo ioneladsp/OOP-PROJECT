@@ -4,8 +4,13 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <set>
+#include <map>
+#include <list>
 #include <ctype.h>
 using namespace std;
+
+class meniu;
 
 int nr_display = 0;
 int nr_select = 0;
@@ -374,6 +379,71 @@ istream& operator>>(istream& in, coloana_tabel& c)
 	strcpy(c.valoare_implicita, buffer.c_str());
 	return in;
 }
+
+class chei_primare : coloana_tabel
+{
+	map<string, int> mp;
+
+	vector<string> initializare_vector_stl(string nume_tabela)
+	{
+		string x;
+		string g = "_pk";
+		vector<string> v;
+		nume_tabela = nume_tabela + g;
+		fstream f(nume_tabela, ios::in);
+		while (!f.eof())
+		{
+			f >> x;
+			v.push_back(x);
+		}
+		return v;
+	}
+
+	void initializare_fisier(string nume_tabela, string data_de_adaugat)
+	{
+		string g = "_pk";
+		nume_tabela = nume_tabela + g;
+		fstream f(nume_tabela, ios::out | ios::app);
+		f << data_de_adaugat << endl;
+	}
+
+	friend class identificator_comanda;
+	friend class meniu;
+	friend class baza_de_date;
+};
+
+class chei_primare_compuse : coloana_tabel
+{
+	map<string, vector<int>> mp;
+
+	map<string, string> initializare_map_stl(string nume_tabela)
+	{
+		string g = "_pk";
+		string x, y;
+		map<string, string> mmp;
+		nume_tabela = nume_tabela + g;
+		fstream f(nume_tabela, ios::in);
+		while (!f.eof())
+		{
+			f >> x;
+			f >> y;
+			mmp.insert(make_pair(x, y));
+		}
+		return mmp;
+	}
+
+	void initializare_fisier(string nume_tabela, string data_de_adaugat1, string data_de_adaugat2)
+	{
+		string g = "_pk";
+		nume_tabela = nume_tabela + g;
+		fstream f(nume_tabela, ios::out | ios::app);
+		f << data_de_adaugat1 << " " << data_de_adaugat2 << endl;
+	}
+
+	friend class baza_de_date;
+	friend class identificator_comanda;
+	friend class meniu;
+};
 
 class date
 {
@@ -919,8 +989,6 @@ class gestionare_fisiere
 		int numar_liniute;
 		int l = 1;
 		numar_liniute = (20 * t[q].numar_coloane - strlen(t[q].nume_tabela)) / 2;
-		//cout << " numar coloane: " << t[q].numar_coloane << endl;
-		//cout << " numar linii: " << t[q].numar_date << endl;
 		f << " ";
 		for (int i = 0; i < numar_liniute; i++)
 			f << "-";
@@ -1058,14 +1126,15 @@ class gestionare_fisiere_binare
 	}
 	void drop_binar(char* nume_fisier)
 	{
+		char* copie_nume_fisier = new char[strlen(nume_fisier) + 1];
+		strcat(copie_nume_fisier, "_pk");
+		remove(copie_nume_fisier);
 		remove(nume_fisier);
 		strcat(nume_fisier, ".bin");
 		remove(nume_fisier);
 	}
 	void delete_binar(char nume_fisier[10], int nr_linii, int nr_coloane, string** matrice, int k)
 	{
-		//cout << " nr linii:" << nr_linii << endl;
-		//cout << " nr_coloane:" << nr_coloane << endl;
 		fstream fisier(nume_fisier, ios::out | ios::trunc);
 		for (int l = 0; l < t[k].get_numar_coloane(); l++)
 		{
@@ -1097,6 +1166,9 @@ class gestionare_fisiere_binare
 	friend class identificator_comanda;
 };
 
+chei_primare C;
+chei_primare_compuse CP;
+
 class baza_de_date
 {
 	string* v;
@@ -1107,10 +1179,11 @@ public:
 
 	void initializare()
 	{
-		//cout << " A intrat in initializare!" << endl;
 		v = new string[10];
 		nr_linii = new int[10];
 		nr_coloane = new int[10];
+		int numar_cheie_primara1;
+		int numar_cheie_primara2;
 		char* nume_tabela;
 		fstream fisier_date("Stocare_date", ios::in | ios::out);
 		fisier_date >> nr_display;
@@ -1130,6 +1203,19 @@ public:
 			fisier_date >> nr_coloane[i];
 			//cout << " nr_coloane[i]: " << nr_coloane[i] << endl;
 			t[i + 1].set_numar_coloane(nr_coloane[i]);
+			fisier_date >> numar_cheie_primara1;
+			fisier_date >> numar_cheie_primara2;
+			vector<int> chei;
+			chei.push_back(numar_cheie_primara1);
+			chei.push_back(numar_cheie_primara2);
+			if (numar_cheie_primara2 != -1)
+			{
+				CP.mp.insert((make_pair(t[i + 1].nume_tabela, chei)));
+			}
+			else
+			{
+				C.mp.insert(make_pair(t[i + 1].nume_tabela, numar_cheie_primara1));
+			}
 			char* s = new char[4];
 			nume_tabela = new char[v[i].length() + 1];
 			strcpy(nume_tabela, v[i].c_str());
@@ -1186,6 +1272,37 @@ public:
 
 };
 
+class documentatie
+{
+public:
+	virtual void afiseaza() = 0;
+};
+
+class documentatie_CRUD : documentatie
+{
+public:
+	// insert, select, update, delete
+	void afiseaza() override
+	{
+		cout << " INSERT INTO nume_tabela VALUES(...); valorile sunt separate prin, si au numarul si ordinea exacta ca definitia tabelului" << endl;
+		cout << " SELECT (cel_putin_o_coloana, ...) | ALL FROM nume_tabela [WHERE nume_coloana = valoare] - clauza WHERE este optionala" << endl;
+		cout << " UPDATE nume_tabela SET nume_coloana = valoare WHERE nume_coloana = valoare (coloana SET poate fi diferita de cea WHERE; UPDATE merge doar pentru o coloana)" << endl;
+		cout << " DELETE FROM nume_tabela WHERE nume_coloana = valoare (DELETE permite doar o coloana în clauza WHERE)" << endl;
+	}
+};
+
+class documentatie_gestiuneBD : documentatie
+{
+public:
+	// create, drop, display
+	void afiseaza() override
+	{
+		cout << " CREATE TABLE nume_tabel [IF NOT EXISTS] ((nume_coloana_1, tip, dimensiune, valoare_implicita), (nume_coloana_2, tip, dimensiune, valoare_implicita), ...) - comanda ar trebui sa primeasca cel putin 1 coloana" << endl;
+		cout << " DROP TABLE table_name" << endl;
+		cout << " DISPLAY TABLE table_name" << endl;
+	}
+};
+
 class identificator_comanda
 {
 	vector<string> nume_tabele;
@@ -1224,9 +1341,12 @@ public:
 		char comanda[20];
 		char nume_tabela[20];
 		int numar_coloane;
+		int raspuns;
 		gestionare_fisiere G;
 		gestionare_fisiere_binare F;
 		baza_de_date B;
+		documentatie_CRUD DC;
+		documentatie_gestiuneBD DG;
 		string** matrice = new string * [10];
 		for (int i = 0; i < 10; i++)
 			matrice[i] = new string[10];
@@ -1236,7 +1356,6 @@ public:
 		int X = 0, Y = 0;
 		int nr_id = 0;
 		char* verifica = strtok(s, separator);
-		// comanda
 		if (verifica)
 		{
 			char* verifica1;
@@ -1270,7 +1389,10 @@ public:
 						t[numar_tabele].set_nume_tabela(verifica);
 						nume_tabele.push_back(verifica);
 						char* nume_t = new char[strlen(verifica) + 1];
+						char* nume_t_map = new char[strlen(verifica) + 1];
 						strcpy(nume_t, verifica);
+						strcpy(nume_t_map, verifica);
+						string nume_t_map_string = nume_t_map;
 						verifica = strtok(NULL, separator);
 						int k = 0;
 						while (verifica)
@@ -1291,7 +1413,105 @@ public:
 							verifica = strtok(NULL, separator);
 						}
 						F.create_binar(nume_t, vector_create, k, numar_coloane);
-						cout << " Tabela a fost creata." << endl;
+						int ok = 0;
+						string cheie;
+						vector<int> cheie_compusa;
+						cout << " Doriti o cheie primara simpla sau una compusa?" << endl;
+						cout << " Apasati 1 pentru simpla" << endl;
+						cout << " Apasati 2 pentru compusa" << endl << endl << " ";
+						int raspuns_cheie;
+						cin >> raspuns_cheie;
+						if (raspuns_cheie == 1)
+						{
+							while (ok == 0)
+							{
+								cout << " Introduceti numele coloanei care doriti sa fie cheie primara: " << endl;
+								cout << " ";
+								cin >> cheie;
+								int o = 0;
+								while (o < numar_coloane)
+								{
+									if (t[numar_tabele].coloane[o].get_nume_coloana() == cheie)
+									{
+										C.mp.insert(make_pair(nume_t_map, o + 1));
+										ok = 1;
+									}
+									o++;
+								}
+								if (ok == 0)
+								{
+									cout << " EROARE: Coloana " << cheie << " nu exista." << endl << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									cin >> raspuns;
+									if (raspuns == 1)
+									{
+										DG.afiseaza();
+									}
+								}
+							}
+						}
+						else if (raspuns_cheie == 2)
+						{
+							int ok1 = 0;
+							int ok2 = 0;
+							while (ok1 == 0 && ok2 == 0)
+							{
+								cout << " Introduceti numele primei coloane care doriti sa fie cheie primara: " << endl;
+								cout << " ";
+								cin >> cheie;
+								int o = 0;
+								while (o < numar_coloane)
+								{
+									if (t[numar_tabele].coloane[o].get_nume_coloana() == cheie)
+									{
+										cheie_compusa.push_back(o + 1);
+										ok1 = 1;
+									}
+									o++;
+								}
+								cout << " Introduceti numele celei de-a doua coloane care doriti sa fie cheie primara: " << endl;
+								cout << " ";
+								cin >> cheie;
+								o = 0;
+								while (o < numar_coloane)
+								{
+									if (t[numar_tabele].coloane[o].get_nume_coloana() == cheie)
+									{
+										cheie_compusa.push_back(o + 1);
+										ok2 = 1;
+									}
+									o++;
+								}
+								if (ok1 == 0 && ok2 == 1)
+								{
+									cout << " EROARE: Prima coloana introdusa nu exista." << endl << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									cin >> raspuns;
+									if (raspuns == 1)
+									{
+										DG.afiseaza();
+									}
+								}
+								else if (ok1 == 1 && ok2 == 0)
+								{
+									cout << " EROARE: A doua coloana introdusa nu exista." << endl << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									//cin >> raspuns;
+									/*if (raspuns == 1)
+									{
+										DG.afiseaza();
+									}*/
+								}
+								else if (ok1 == 1 && ok2 == 1)
+								{
+									CP.mp.insert(make_pair(nume_t_map_string, cheie_compusa));
+								}
+							}
+						}
+						cout << endl << " Tabela a fost creata." << endl;
 						cout << endl;
 						system("pause");
 						system("cls");
@@ -1303,6 +1523,13 @@ public:
 				else
 				{
 					cout << " EROARE: Introduceti numele tabelei." << endl;
+					cout << " Doriti sa consultati instructiunile?" << endl;
+					cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+					cin >> raspuns;
+					if (raspuns == 1)
+					{
+						DG.afiseaza();
+					}
 					system("pause");
 					system("cls");
 				}
@@ -1332,6 +1559,13 @@ public:
 					{
 						cout << " EROARE: Tabela nu exista." << endl;
 						cout << endl;
+						cout << " Doriti sa consultati instructiunile?" << endl;
+						cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+						cin >> raspuns;
+						if (raspuns == 1)
+						{
+							DG.afiseaza();
+						}
 						system("pause");
 						system("cls");
 					}
@@ -1363,6 +1597,13 @@ public:
 					{
 						cout << " EROARE: Tabela nu exista" << endl;
 						cout << endl;
+						cout << " Doriti sa consultati instructiunile?" << endl;
+						cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+						cin >> raspuns;
+						if (raspuns == 1)
+						{
+							DG.afiseaza();
+						}
 						system("pause");
 						system("cls");
 					}
@@ -1373,10 +1614,14 @@ public:
 				verifica = strtok(NULL, separator);
 				if (verifica)
 				{
+					vector<string> v;
+					map<string, string> mpc;
 					string* insert = new string[100];
 					int y = 0;
 					char* nume_tabela_binar = new char[strlen(verifica) + 1];
+					char* nume_tabela_pk = new char[strlen(verifica) + 1];
 					strcpy(nume_tabela_binar, verifica);
+					strcpy(nume_tabela_pk, verifica);
 					vector<string>::iterator it = find(nume_tabele.begin(), nume_tabele.end(), verifica);
 					if (it != nume_tabele.end()) //daca se gaseste in vector
 					{
@@ -1386,28 +1631,103 @@ public:
 						{
 							if (strcmp(uppercase(verifica), "VALUES") == 0)
 							{
+								int ok = -1;
+								int bec = 1;
 								int m = 1;
+
 								verifica = strtok(NULL, separator);
-								while (verifica && m <= t[aux + 1].numar_coloane)
+								while (verifica && m <= t[aux + 1].numar_coloane && bec == 1)
 								{
-									t[aux + 1].d[t[aux + 1].numar_date + 1][m].set_date_introduse(verifica);
-									insert[y++] = t[aux + 1].d[t[aux + 1].numar_date + 1][m].get_date_introduse();
-									verifica = strtok(NULL, separator);
+									if (t[aux + 1].numar_date >= 1)
+									{
+										v = C.initializare_vector_stl(nume_tabela_pk);
+										mpc = CP.initializare_map_stl(nume_tabela_pk);
+										for (map<string, int>::iterator it = C.mp.begin(); it != C.mp.end(); it++)
+										{
+											if (it->first == t[aux + 1].nume_tabela)
+											{
+												if (it->second == m)
+												{
+													ok = 1;
+													for (int L = 0; L < v.size(); L++)
+													{
+														if (v[L] == verifica)
+														{
+															ok = 0;
+															bec = 0;
+														}
+													}
+													if (ok == 1)
+													{
+														t[aux + 1].d[t[aux + 1].numar_date + 1][m].set_date_introduse(verifica);
+														C.initializare_fisier(nume_tabela_binar, verifica);
+														insert[y++] = t[aux + 1].d[t[aux + 1].numar_date + 1][m].get_date_introduse();
+													}
+												}
+												else
+												{
+													ok = 1;
+													t[aux + 1].d[t[aux + 1].numar_date + 1][m].set_date_introduse(verifica);
+													insert[y++] = t[aux + 1].d[t[aux + 1].numar_date + 1][m].get_date_introduse();
+												}
+											}
+											else
+											{
+												int ok1 = 0, ok2 = 0;
+
+											}
+										}
+									}
+									else if (t[aux + 1].numar_date < 1)
+									{
+										for (map<string, int>::iterator it = C.mp.begin(); it != C.mp.end(); it++)
+										{
+											if (it->first == t[aux + 1].nume_tabela)
+											{
+												if (it->second == m)
+												{
+													C.initializare_fisier(nume_tabela_binar, verifica);
+													t[aux + 1].d[t[aux + 1].numar_date + 1][m].set_date_introduse(verifica);
+													insert[y++] = t[aux + 1].d[t[aux + 1].numar_date + 1][m].get_date_introduse();
+												}
+												else
+												{
+													t[aux + 1].d[t[aux + 1].numar_date + 1][m].set_date_introduse(verifica);
+													insert[y++] = t[aux + 1].d[t[aux + 1].numar_date + 1][m].get_date_introduse();
+												}
+											}
+											ok = 1;
+										}
+									}
 									m++;
+									verifica = strtok(NULL, separator);
 								}
-								cout << " Inregistrare inserata." << endl;
-								//F.insert_binar(nume_tabela_binar, t[aux + 1].numar_coloane, insert, t[aux+1].d, t[aux+1].get_numar_date()+1);
-								F.insert_binar(nume_tabela_binar, t[aux + 1].numar_coloane, insert);
-								cout << endl;
+								if (ok == 1 && bec == 1)
+								{
+									F.insert_binar(nume_tabela_binar, t[aux + 1].numar_coloane, insert);
+									t[aux + 1].numar_date++; //numar insert
+									cout << " Inregistrare inserata." << endl;
+									cout << endl;
+									t[aux + 1].set_numar_date(t[aux + 1].numar_date);
+								}
+								else
+								{
+									cout << " EROARE: Valoarea exista deja." << endl;
+								}
 								system("pause");
 								system("cls");
-								t[aux + 1].numar_date++; //numar insert
-								t[aux + 1].set_numar_date(t[aux + 1].numar_date);
 							}
 							else
 							{
 								cout << " EROARE: Nu ati introdus cuvantul cheie VALUES." << endl;
 								cout << endl;
+								cout << " Doriti sa consultati instructiunile?" << endl;
+								cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+								cin >> raspuns;
+								if (raspuns == 1)
+								{
+									DC.afiseaza();
+								}
 								system("pause");
 								system("cls");
 							}
@@ -1417,6 +1737,13 @@ public:
 					{
 						cout << " EROARE: Tabela nu exista sau a fost stearsa." << endl;
 						cout << endl;
+						cout << " Doriti sa consultati instructiunile?" << endl;
+						cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+						cin >> raspuns;
+						if (raspuns == 1)
+						{
+							DC.afiseaza();
+						}
 						system("pause");
 						system("cls");
 					}
@@ -1434,6 +1761,7 @@ public:
 						vector<string>::iterator it = find(nume_tabele.begin(), nume_tabele.end(), verifica);
 						if (it != nume_tabele.end()) //daca se gaseste in vector
 						{
+							aux = distance(nume_tabele.begin(), it);
 							string copie_nume_tabela = verifica;
 							verifica = strtok(NULL, separator); //poate am ajuns la where
 							if (verifica)
@@ -1556,6 +1884,13 @@ public:
 										{
 											cout << " EROARE: Coloana " << verifica << " nu exista." << endl;
 											cout << endl;
+											cout << " Doriti sa consultati instructiunile?" << endl;
+											cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+											cin >> raspuns;
+											if (raspuns == 1)
+											{
+												DC.afiseaza();
+											}
 											system("pause");
 											system("cls");
 										}
@@ -1565,6 +1900,13 @@ public:
 								{
 									cout << " EROARE: Nu ati introdus cuvantul cheie WHERE." << endl;
 									cout << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									cin >> raspuns;
+									if (raspuns == 1)
+									{
+										DC.afiseaza();
+									}
 									system("pause");
 									system("cls");
 								}
@@ -1590,6 +1932,13 @@ public:
 						{
 							cout << " EROARE: Tabela nu exista sau a fost stearsa." << endl;
 							cout << endl;
+							cout << " Doriti sa consultati instructiunile?" << endl;
+							cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+							cin >> raspuns;
+							if (raspuns == 1)
+							{
+								DC.afiseaza();
+							}
 							system("pause");
 							system("cls");
 						}
@@ -1599,6 +1948,13 @@ public:
 				{
 					cout << " EROARE: Nu ati introdus cuvantul cheie FROM." << endl;
 					cout << endl;
+					cout << " Doriti sa consultati instructiunile?" << endl;
+					cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+					cin >> raspuns;
+					if (raspuns == 1)
+					{
+						DC.afiseaza();
+					}
 					system("pause");
 					system("cls");
 				}
@@ -1702,6 +2058,13 @@ public:
 								{
 									cout << " EROARE: Coloana " << verifica << " nu exista." << endl;
 									cout << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									cin >> raspuns;
+									if (raspuns == 1)
+									{
+										DC.afiseaza();
+									}
 									system("pause");
 									system("cls");
 								}
@@ -1711,6 +2074,13 @@ public:
 						{
 							cout << " EROARE: Nu ati introdus cuvantul cheie WHERE." << endl;
 							cout << endl;
+							cout << " Doriti sa consultati instructiunile?" << endl;
+							cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+							cin >> raspuns;
+							if (raspuns == 1)
+							{
+								DC.afiseaza();
+							}
 							system("pause");
 							system("cls");
 						}
@@ -1719,6 +2089,13 @@ public:
 					{
 						cout << " EROARE: Tabela nu exista sau a fost stearsa." << endl;
 						cout << endl;
+						cout << " Doriti sa consultati instructiunile?" << endl;
+						cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+						cin >> raspuns;
+						if (raspuns == 1)
+						{
+							DC.afiseaza();
+						}
 						system("pause");
 						system("cls");
 					}
@@ -1726,12 +2103,12 @@ public:
 			}
 			else if (strcmp(verifica1, "SELECT") == 0)
 			{
-				vector<string> coloana;
+				set<string> coloana;
 				if (verifica)
 				{
 					while (verifica != NULL && strcmp(uppercase(verifica), "FROM") != 0)
 					{
-						coloana.push_back(verifica);
+						coloana.insert(verifica);
 						verifica = strtok(NULL, separator);
 					}
 					verifica = strtok(NULL, separator); //am ajuns la numele tabelei
@@ -1780,8 +2157,8 @@ public:
 														{
 															for (int j = 1; j <= t[aux + 1].numar_coloane; j++)
 															{
-																for (int k = 0; k < coloana.size(); k++)
-																	if (coloana[k] == t[aux + 1].d[0][j].get_date_introduse())
+																for (set<string>::iterator it = coloana.begin(); it != coloana.end(); it++)
+																	if (*it == t[aux + 1].d[0][j].get_date_introduse())
 																	{
 																		cout << " |  " << t[aux + 1].d[g][j].get_date_introduse();
 																		matrice1[X][Y++] = t[aux + 1].d[g][j].get_date_introduse();
@@ -1832,9 +2209,9 @@ public:
 								Y = 0;
 								for (int j = 0; j < t[aux + 1].numar_coloane; j++)
 								{
-									for (int k = 0; k < coloana.size(); k++)
+									for (set<string>::iterator it = coloana.begin(); it != coloana.end(); it++)
 									{
-										if (coloana[k] == t[aux + 1].d[0][j + 1].get_date_introduse())
+										if (*it == t[aux + 1].d[0][j + 1].get_date_introduse())
 										{
 											cout << " |  " << t[aux + 1].d[l][j + 1].get_date_introduse() << " ";
 											matrice1[X][Y++] = t[aux + 1].d[l][j + 1].get_date_introduse();
@@ -1877,9 +2254,13 @@ public:
 			{
 				if (verifica)
 				{
+					vector<string> v;
 					vector<string>::iterator it = find(nume_tabele.begin(), nume_tabele.end(), verifica);
 					if (it != nume_tabele.end()) //daca se gaseste in vector
 					{
+						char* nume_tabela_pk = new char[strlen(verifica) + 1];
+						strcpy(nume_tabela_pk, verifica);
+						v = C.initializare_vector_stl(nume_tabela_pk);
 						aux = distance(nume_tabele.begin(), it);
 						verifica = strtok(NULL, separator);
 						string** matrice_update = new string * [10];
@@ -1907,116 +2288,161 @@ public:
 											verifica = strtok(NULL, separator); //luam valoarea dorita
 											if (verifica)
 											{
-												char* valoare_dorita;
-												valoare_dorita = new char[strlen(verifica) + 1];
-												strcpy(valoare_dorita, verifica);
-												for (int j = 0; j < t[aux + 1].numar_coloane; j++)
+												int ok = 1;
+												for (int A = 0; A < v.size(); A++)
 												{
-													if (strcmp(t[aux + 1].d[0][j + 1].get_date_introduse(), t[aux + 1].coloane[i].nume_coloana) == 0) //cautam coloana corespunzatoare pretului
+													if (v[A] == verifica)
 													{
-														for (int k = 1; k <= t[aux + 1].numar_date; k++) //parcurgere pe linii
+														ok = 0;
+													}
+												}
+												if (ok == 1)
+												{
+													char* valoare_dorita;
+													valoare_dorita = new char[strlen(verifica) + 1];
+													strcpy(valoare_dorita, verifica);
+													for (int j = 0; j < t[aux + 1].numar_coloane; j++)
+													{
+														if (strcmp(t[aux + 1].d[0][j + 1].get_date_introduse(), t[aux + 1].coloane[i].nume_coloana) == 0) //cautam coloana corespunzatoare pretului
 														{
-															verifica = strtok(NULL, separator);
-															if (verifica)
+															for (int k = 1; k <= t[aux + 1].numar_date; k++) //parcurgere pe linii
 															{
-																if (strcmp(uppercase(verifica), "WHERE") == 0)
+																verifica = strtok(NULL, separator);
+																if (verifica)
 																{
-																	verifica = strtok(NULL, separator); //nume coloana
-																	if (verifica)
+																	if (strcmp(uppercase(verifica), "WHERE") == 0)
 																	{
-																		int w = 0;
-																		while (w < t[aux + 1].numar_coloane && strcmp(verifica, t[aux + 1].d[0][w + 1].get_date_introduse()) != 0)
+																		verifica = strtok(NULL, separator); //nume coloana
+																		if (verifica)
 																		{
-																			w++;
-																		}
-																		if (w < t[aux + 1].numar_coloane)
-																		{
-																			verifica = strtok(NULL, separator); //il luam pe egal
-																			if (strcmp(uppercase(verifica), "=") == 0)
+																			int w = 0;
+																			while (w < t[aux + 1].numar_coloane && strcmp(verifica, t[aux + 1].d[0][w + 1].get_date_introduse()) != 0)
 																			{
-																				verifica = strtok(NULL, separator); //luam valoarea cautata in ramura 2
-																				if (verifica)
+																				w++;
+																			}
+																			if (w < t[aux + 1].numar_coloane)
+																			{
+																				verifica = strtok(NULL, separator); //il luam pe egal
+																				if (strcmp(uppercase(verifica), "=") == 0)
 																				{
-																					int nr = 0;
-																					for (int q = 1; q <= t[aux + 1].numar_date; q++)
+																					verifica = strtok(NULL, separator); //luam valoarea cautata in ramura 2
+																					if (verifica)
 																					{
-																						if (strcmp(t[aux + 1].d[q][w + 1].get_date_introduse(), verifica) == 0)
+																						int nr = 0;
+																						for (int q = 1; q <= t[aux + 1].numar_date; q++)
 																						{
-																							t[aux + 1].d[q][i + 1].set_date_introduse(valoare_dorita);
-																							nr++;
-																						}
-																					}
-																					if (nr == 0)
-																					{
-																						cout << " Nu a fost modificata nicio valoare." << endl;
-																						system("pause");
-																						system("cls");
-																					}
-																					else if (nr == 1)
-																					{
-																						for (int U = 0; U < t[aux + 1].numar_date + 1; U++)
-																						{
-																							for (int P = 0; P < t[aux + 1].numar_coloane; P++)
+																							if (strcmp(t[aux + 1].d[q][w + 1].get_date_introduse(), verifica) == 0)
 																							{
-																								matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
+																								t[aux + 1].d[q][i + 1].set_date_introduse(valoare_dorita);
+																								nr++;
 																							}
 																						}
-																						char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
-																						strcpy(nume_t, t[aux + 1].get_nume_tabela());
-																						F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
-																						cout << " A fost modificata o inregistrare." << endl << endl;
-																						system("pause");
-																						system("cls");
-																					}
-																					else
-																					{
-																						for (int U = 0; U < t[aux + 1].numar_date + 1; U++)
+																						if (nr == 0)
 																						{
-																							for (int P = 0; P < t[aux + 1].numar_coloane; P++)
-																							{
-																								matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
-																							}
+																							cout << " Nu a fost modificata nicio valoare." << endl;
+																							system("pause");
+																							system("cls");
 																						}
-																						char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
-																						strcpy(nume_t, t[aux + 1].get_nume_tabela());
-																						F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
-																						cout << " Au fost modificate " << nr << " inregistrari." << endl;
-																						system("pause");
-																						system("cls");
+																						else if (nr == 1)
+																						{
+																							for (int U = 0; U < t[aux + 1].numar_date + 1; U++)
+																							{
+																								for (int P = 0; P < t[aux + 1].numar_coloane; P++)
+																								{
+																									matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
+																								}
+																							}
+																							char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
+																							strcpy(nume_t, t[aux + 1].get_nume_tabela());
+																							F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
+																							cout << " A fost modificata o inregistrare." << endl << endl;
+																							system("pause");
+																							system("cls");
+																						}
+																						else
+																						{
+																							for (int U = 0; U < t[aux + 1].numar_date + 1; U++)
+																							{
+																								for (int P = 0; P < t[aux + 1].numar_coloane; P++)
+																								{
+																									matrice_update[U][P] = t[aux + 1].d[U][P + 1].get_date_introduse();
+																								}
+																							}
+																							char* nume_t = new char[strlen(t[aux + 1].get_nume_tabela()) + 1];
+																							strcpy(nume_t, t[aux + 1].get_nume_tabela());
+																							F.update_binar(nume_t, t[aux + 1].numar_date + 1, t[aux + 1].numar_coloane, matrice_update, aux + 1);
+																							cout << " Au fost modificate " << nr << " inregistrari." << endl;
+																							system("pause");
+																							system("cls");
+																						}
 																					}
+																				}
+																				else
+																				{
+																					cout << " EROARE: Nu ati introdus '='." << endl;
+																					cout << " Doriti sa consultati instructiunile?" << endl;
+																					cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+																					cin >> raspuns;
+																					if (raspuns == 1)
+																					{
+																						DC.afiseaza();
+																					}
+																					system("pause");
+																					system("cls");
 																				}
 																			}
 																			else
 																			{
-																				cout << " EROARE: Nu ati introdus '='." << endl;
+																				cout << " EROARE: Coloana " << verifica << " nu exista." << endl;
+																				cout << " Doriti sa consultati instructiunile?" << endl;
+																				cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+																				cin >> raspuns;
+																				if (raspuns == 1)
+																				{
+																					DC.afiseaza();
+																				}
+																				cout << endl;
 																				system("pause");
 																				system("cls");
 																			}
 																		}
-																		else
-																		{
-																			cout << " EROARE: Coloana " << verifica << " nu exista." << endl;
-																			cout << endl;
-																			system("pause");
-																			system("cls");
-																		}
 																	}
-																}
-																else
-																{
-																	cout << " EROARE: Nu ati introdus cuvantul cheie WHERE." << endl;
-																	system("pause");
-																	system("cls");
+																	else
+																	{
+																		cout << " EROARE: Nu ati introdus cuvantul cheie WHERE." << endl;
+																		cout << " Doriti sa consultati instructiunile?" << endl;
+																		cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+																		cin >> raspuns;
+																		if (raspuns == 1)
+																		{
+																			DC.afiseaza();
+																		}
+																		system("pause");
+																		system("cls");
+																	}
 																}
 															}
 														}
 													}
+												}
+												else
+												{
+													cout << endl << " Eroare: Valoarea exista deja." << endl << endl;
+													system("pause");
+													system("cls");
 												}
 											}
 										}
 										else
 										{
 											cout << " EROARE: Nu ati introdus '='." << endl;
+											cout << " Doriti sa consultati instructiunile?" << endl;
+											cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+											cin >> raspuns;
+											if (raspuns == 1)
+											{
+												DC.afiseaza();
+											}
 											system("pause");
 											system("cls");
 										}
@@ -2025,6 +2451,13 @@ public:
 								else
 								{
 									cout << " EROARE: Coloana " << verifica << " nu exista." << endl;
+									cout << " Doriti sa consultati instructiunile?" << endl;
+									cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+									cin >> raspuns;
+									if (raspuns == 1)
+									{
+										DC.afiseaza();
+									}
 									cout << endl;
 									system("pause");
 									system("cls");
@@ -2034,6 +2467,13 @@ public:
 						else
 						{
 							cout << " EROARE: Nu ati introdus cuvantul cheie 'SET'." << endl;
+							cout << " Doriti sa consultati instructiunile?" << endl;
+							cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+							cin >> raspuns;
+							if (raspuns == 1)
+							{
+								DC.afiseaza();
+							}
 							system("pause");
 							system("cls");
 						}
@@ -2044,6 +2484,13 @@ public:
 					else
 					{
 						cout << " EROARE: Tabela nu exista." << endl;
+						cout << " Doriti sa consultati instructiunile?" << endl;
+						cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+						cin >> raspuns;
+						if (raspuns == 1)
+						{
+							DC.afiseaza();
+						}
 						system("pause");
 						system("cls");
 					}
@@ -2052,6 +2499,14 @@ public:
 			else
 			{
 				cout << " EROARE: Comanda nu a fost introdusa corect." << endl;
+				cout << " Doriti sa consultati instructiunile?" << endl;
+				cout << " Apasati 1 pentru a confirma, altfel apasati orice alta tasta numerica." << endl << " ";
+				cin >> raspuns;
+				if (raspuns == 1)
+				{
+					DG.afiseaza();
+					DC.afiseaza();
+				}
 				cout << endl;
 				system("pause");
 				system("cls");
@@ -2125,6 +2580,7 @@ public:
 	{
 		return this->aux < t2.aux;
 	}
+
 	friend class coloana_tabel;
 	friend class tabela;
 	friend class date;
@@ -2132,6 +2588,11 @@ public:
 	friend ostream& operator<<(ostream&, identificator_comanda);
 	friend istream& operator>>(istream&, identificator_comanda&);
 	friend class gestionare_fisiere;
+	friend class chei_primare;
+	friend class raport;
+	friend class documentatie_gestiuneBD;
+	friend class documentatie_CRUD;
+	friend class documentatie;
 };
 
 ostream& operator<<(ostream& out, identificator_comanda ic)
@@ -2151,6 +2612,53 @@ istream& operator>>(istream& in, identificator_comanda& ic)
 	return in;
 }
 
+class raport
+{
+private:
+	list<string> comenzi;
+	identificator_comanda a;
+public:
+
+	void adauga_comanda(string comanda)
+	{
+		comenzi.push_back(comanda);
+	}
+
+	void afiseaza(vector<string> tabele)
+	{
+		int t;
+		cout << endl;
+		cout << " Apasati 1 pentru a primi un raport cu numele tuturor tabelelor din baza de date." << endl;
+		cout << " Apasati 2 pentru a afisa istoricul comenzilor din sesiunea curenta." << endl;
+		cout << " Apasati 3 pentru a afisa numarul total de comenzi din sesiunea curenta." << endl << " ";
+		cin >> t;
+		if (t == 1)
+		{
+			for (vector<string>::iterator it = tabele.begin(); it != tabele.end(); it++)
+				cout << *it << endl;
+			system("pause");
+		}
+		else if (t == 2)
+		{
+			cout << endl;
+			for (list<string>::iterator it = comenzi.begin(); it != comenzi.end(); it++)
+			{
+				cout << " " << *it << endl;
+			}
+			system("pause");
+		}
+		else if (t == 3)
+		{
+			cout << endl << comenzi.size() << endl;
+			system("pause");
+		}
+		else
+		{
+			cout << " Nu ati introdus...";
+		}
+	}
+};
+
 class meniu
 {
 	char s[200];
@@ -2158,7 +2666,9 @@ class meniu
 	int static numar_comanda;
 	identificator_comanda a;
 	baza_de_date b;
+	raport r;
 public:
+
 	meniu()
 	{
 		this->z = 0;
@@ -2167,59 +2677,129 @@ public:
 
 	void verifica()
 	{
-		b.initializare();
+		//b.initializare();
 		if (b.get_dim() > 0)
 		{
 			for (int i = 0; i < b.get_dim(); i++)
 			{
-				//cout << " for push back " << endl;
 				a.nume_tabele.push_back(b.v[i]);
 			}
 		}
 		cout << endl;
-		cout << " Doriti sa introduceti o comanda? 1 sau 0" << endl;
+		cout << " Doriti sa introduceti o comanda? 1" << endl;
+		cout << " Doriti sa primiti un raport? 2" << endl;
+		cout << " Pentru a inchide apasati orice alta tasta numerica." << endl;
 		cout << " Raspuns: ";
 		cin >> z;
 		system("cls");
-		if (z == 1)
+		if (z == 1 || z == 2)
 		{
-			cout << endl << " Introduceti comanda:" << endl << endl << " ";
-			while (z == 1)
+			while (z == 1 || z == 2)
 			{
-				cin.get();
-				cin.getline(s, 200);
-				cout << endl;
-				a.identifica_comanda(s);
-				cout << endl;
-				cout << " Doriti sa introduceti o comanda noua?" << endl;
+				if (z == 1)
+				{
+					cout << endl;
+					cout << " Introduceti comanda:" << endl << endl << " ";
+					cin.get();
+					cin.getline(s, 200);
+					cout << endl;
+					string copie = s;
+					a.identifica_comanda(s);
+					numar_comanda++;
+					r.adauga_comanda(copie);
+					cout << endl;
+				}
+				else if (z == 2)
+				{
+					r.afiseaza(a.nume_tabele);
+					system("cls");
+					cout << endl;
+				}
+				cout << " Doriti sa introduceti o comanda noua (1) sau sa afisati un raport (2)?" << endl;
+				cout << " Pentru a inchide apasati orice alta tasta numerica." << endl;
 				cout << " Raspuns: ";
 				cin >> z;
 				system("cls");
 				cout << endl;
-				if (z == 1)
-					cout << " Introduceti comanda:" << endl << endl << " ";
 			}
 		}
 		if (b.get_dim() > 0 || numar_tabele > 1)
 		{
 			fstream fisier_inceput("Stocare_date", ios::out);
 			fisier_inceput << nr_display << " ";
-			//cout << " nr_display: " << nr_display << endl;
 			fisier_inceput << nr_select << " ";
-			//cout << " nr_select: " << nr_select << endl;
 			fisier_inceput << endl;
-			for (int i = 1; i < a.nume_tabele.size(); i++)
+			map<string, int>::iterator it = C.mp.begin();
+			map<string, vector<int>>::iterator it2 = CP.mp.begin();
+			int ok;
+			cout << " a.nume_tabele.size(): " << a.nume_tabele.size() << endl;
+			cout << " prima: " << a.nume_tabele[0] << endl;
+			cout << " a doua: " << a.nume_tabele[1] << endl;
+			for (int i = 0; i < a.nume_tabele.size() - 1; i++)
 			{
-				/*cout << " i: " << i << endl;
-				cout << " for1" << endl;
-				cout << " nume_tabela:" << t[i].get_nume_tabela() << endl;*/
-				fisier_inceput << t[i].get_nume_tabela() << " ";
-				fisier_inceput << t[i].get_numar_date() << " ";
-				fisier_inceput << t[i].get_numar_coloane() << endl;
+				cout << " i: " << i << endl;
+				ok = 0;
+				for (map<string, int>::iterator it3 = C.mp.begin(); it3 != C.mp.end(); it3++)
+				{
+					if (it3->first == a.nume_tabele[i])
+					{
+						cout << " nume tabela: " << a.nume_tabele[i] << endl;
+						cout << " it3: " << it3->first << endl;
+						cout << " 1" << endl;
+						ok = 1;
+					}
+				}
+				if (ok == 1)
+				{
+					cout << "A bagat cheie simpla." << endl;
+					fisier_inceput << t[i + 1].get_nume_tabela() << " ";
+					fisier_inceput << t[i + 1].get_numar_date() << " ";
+					fisier_inceput << t[i + 1].get_numar_coloane() << " ";
+					fisier_inceput << it->second << " ";
+					fisier_inceput << "-1" << endl;
+					it++;
+				}
+				else
+				{
+					cout << "A bagat cheie compusa." << endl;
+					fisier_inceput << t[i + 1].get_nume_tabela() << " ";
+					fisier_inceput << t[i + 1].get_numar_date() << " ";
+					fisier_inceput << t[i + 1].get_numar_coloane() << " ";
+					fisier_inceput << it2->second[0] << " " << it2->second[1] << endl;
+					it2++;
+				}
 			}
-			fisier_inceput << t[a.nume_tabele.size()].get_nume_tabela() << " ";
-			fisier_inceput << t[a.nume_tabele.size()].get_numar_date() << " ";
-			fisier_inceput << t[a.nume_tabele.size()].get_numar_coloane();
+			ok = 0;
+			for (map<string, int>::iterator it3 = C.mp.begin(); it3 != C.mp.end(); it3++)
+			{
+				cout << " for final" << endl;
+				if (it3->first == a.nume_tabele[a.nume_tabele.size() - 1])
+				{
+					cout << " nume tabela: " << a.nume_tabele[a.nume_tabele.size() - 1] << endl;
+					cout << " it3: " << it3->first << endl;
+					cout << " 2" << endl;
+					ok = 1;
+				}
+			}
+			if (ok == 1)
+			{
+				cout << "A bagat cheie simpla." << endl;
+				fisier_inceput << t[a.nume_tabele.size()].get_nume_tabela() << " ";
+				fisier_inceput << t[a.nume_tabele.size()].get_numar_date() << " ";
+				fisier_inceput << t[a.nume_tabele.size()].get_numar_coloane() << " ";
+				fisier_inceput << it->second << " ";
+				fisier_inceput << "-1";
+				it++;
+			}
+			else
+			{
+				cout << "A bagat cheie compusa." << endl;
+				fisier_inceput << t[a.nume_tabele.size()].get_nume_tabela() << " ";
+				fisier_inceput << t[a.nume_tabele.size()].get_numar_date() << " ";
+				fisier_inceput << t[a.nume_tabele.size()].get_numar_coloane() << " ";
+				fisier_inceput << it2->second[0] << " " << it2->second[1];
+				it2++;
+			}
 			fisier_inceput.close();
 			fisier_inceput.clear();
 		}
@@ -2267,6 +2847,7 @@ public:
 	friend istream& operator>>(istream&, meniu&);
 	friend class identificator_comanda;
 	friend class baza_de_date;
+	friend class raport;
 };
 
 ostream& operator<<(ostream& out, meniu m)
@@ -2286,4 +2867,5 @@ istream& operator>>(istream& in, meniu& m)
 	in >> m.a;
 	return in;
 }
+
 int meniu::numar_comanda = 0;
